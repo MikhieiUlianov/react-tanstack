@@ -1,4 +1,6 @@
-export default function Header({ children }) {
+import { ReactNode } from "react";
+
+export default function Header({ children }: { children: ReactNode }) {
   return (
     <>
       <div id="main-header-loading"></div>

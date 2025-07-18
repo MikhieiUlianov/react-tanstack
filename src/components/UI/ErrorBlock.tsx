@@ -1,4 +1,9 @@
-export default function ErrorBlock({ title, message }) {
+type ErrorBlockProps = {
+  title: string;
+  message: string;
+};
+
+export default function ErrorBlock({ title, message }: ErrorBlockProps) {
   return (
     <div className="error-block">
       <div className="error-block-icon">!</div>

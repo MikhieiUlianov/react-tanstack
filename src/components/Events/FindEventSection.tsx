@@ -1,9 +1,9 @@
-import { useRef } from 'react';
+import { FormEvent, useRef } from "react";
 
 export default function FindEventSection() {
-  const searchElement = useRef();
+  const searchElement = useRef<HTMLInputElement | null>(null);
 
-  function handleSubmit(event) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
   }
 
