@@ -12,7 +12,7 @@ export async function fetchEvents({
   if (searchTerm) {
     url += "?search=" + searchTerm;
   }
-  const response = await fetch(url);
+  const response = await fetch(url, { signal: signal });
 
   if (!response.ok) {
     const error = new Error(

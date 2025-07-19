@@ -11,14 +11,8 @@ export default function NewEventsSection() {
     FetchError
   >({
     queryKey: ["events"],
-    //RQ by default passes some data when function must has some arg, and we assign like this: queryFn: fetchEvents,
     queryFn: fetchEvents,
-    //-this controls after which time react will send such a behind the seens request,'
-    //  to get updated data, if it find in your cache
-    //-it is like a timeout, after whihc request will be send by react
     staleTime: 1000,
-    //-how long data it the cache will be kept around
-    // gcTime:30000
   });
   let content;
 
