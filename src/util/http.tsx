@@ -1,4 +1,4 @@
-import { EventItemType, FetchError } from "../types";
+import { EventItemType, FetchError, FormDataType } from "../types";
 type FetchEventsProps = {
   searchTerm?: string;
   signal?: AbortSignal;
@@ -7,11 +7,13 @@ export async function fetchEvents({
   signal,
   searchTerm,
 }: FetchEventsProps): Promise<EventItemType[]> {
+  console.log(searchTerm);
   let url = "http://localhost:3000/events";
 
   if (searchTerm) {
     url += "?search=" + searchTerm;
   }
+
   const response = await fetch(url, { signal: signal });
 
   if (!response.ok) {
@@ -26,4 +28,27 @@ export async function fetchEvents({
   const { events } = await response.json();
 
   return events;
+}
+
+export async function createNewEvent(eventData: { event: FormDataType }) {
+  const response = await fetch(`http://localhost:3000/events`, {
+    method: "POST",
+    body: JSON.stringify(eventData),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const error = new Error(
+      "An error occurred while creating the event"
+    ) as FetchError;
+    error.code = response.status;
+    error.info = await response.json();
+    throw error;
+  }
+
+  const { event } = await response.json();
+
+  return event;
 }
