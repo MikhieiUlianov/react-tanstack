@@ -1,55 +1,43 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import LoadingIndicator from "../UI/LoadingIndicator.jsx";
 import ErrorBlock from "../UI/ErrorBlock.jsx";
 import EventItem from "./EventItem.js";
-import { EventItemType } from "../../types.js";
-
+import { fetchEvents } from "../../util/http.js";
+import { EventItemType, FetchError } from "../../types.js";
 export default function NewEventsSection() {
-  const [data, setData] = useState<EventItemType[]>([]);
-  const [error, setError] = useState();
-  const [isLoading, setIsLoading] = useState(false);
+  //-behind the seens send an http request
+  // get us this event data that we need,
+  // and also give info about state (loadetnd etc.)
 
-  useEffect(() => {
-    async function fetchEvents() {
-      setIsLoading(true);
-      const response = await fetch("http://localhost:3000/events");
+  //-if we use error, we must make sure that our http function throws an error
+  const { data, isPending, isError, error } = useQuery<
+    EventItemType[],
+    FetchError
+  >({
+    //-every get http request should have a key
+    // which then internally be used by tanstack to cache
+    // so that response could be re used in the future if you are trying to send the same request again
 
-      if (!response.ok) {
-        const error = new Error(
-          "An error occurred while fetching the events"
-        ) as Error & { code: number; info: unknown };
-        error.code = response.status;
-        error.info = await response.json();
-        throw error;
-      }
-
-      const { events } = await response.json();
-
-      return events;
-    }
-
-    fetchEvents()
-      .then((events) => {
-        setData(events);
-      })
-      .catch((error) => {
-        setError(error);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, []);
-
+    //-takes an array of values which are then internally stored,
+    // such that whenever you are using a similar array of similar values
+    // react query sees, and is able to reuse this data
+    queryKey: ["events"],
+    //needs a function which returns a promise
+    queryFn: fetchEvents,
+  });
   let content;
 
-  if (isLoading) {
+  if (isPending) {
     content = <LoadingIndicator />;
   }
 
-  if (error) {
+  if (isError) {
     content = (
-      <ErrorBlock title="An error occurred" message="Failed to fetch events" />
+      <ErrorBlock
+        title="An error occurred"
+        message={error.info?.message || "Failed to fetch events"}
+      />
     );
   }
 

@@ -10,3 +10,8 @@ export type EventItemType = {
   id: string;
   image: string;
 } & FormDataType;
+
+export type FetchError = Error & {
+  code?: number;
+  info?: { message?: string };
+};
