@@ -1,7 +1,18 @@
 import { EventItemType, FetchError } from "../types";
+type FetchEventsProps = {
+  searchTerm?: string;
+  signal?: AbortSignal;
+};
+export async function fetchEvents({
+  signal,
+  searchTerm,
+}: FetchEventsProps): Promise<EventItemType[]> {
+  let url = "http://localhost:3000/events";
 
-export async function fetchEvents(): Promise<EventItemType[]> {
-  const response = await fetch("http://localhost:3000/events");
+  if (searchTerm) {
+    url += "?search=" + searchTerm;
+  }
+  const response = await fetch(url);
 
   if (!response.ok) {
     const error = new Error(

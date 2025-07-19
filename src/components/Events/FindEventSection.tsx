@@ -1,26 +1,64 @@
-import { FormEvent, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { FormEvent, useRef, useState } from "react";
+import { fetchEvents } from "../../util/http";
+import LoadingIndicator from "../UI/LoadingIndicator";
+import ErrorBlock from "../UI/ErrorBlock";
+import { EventItemType, FetchError } from "../../types";
+import EventItem from "./EventItem";
 
 export default function FindEventSection() {
   const searchElement = useRef<HTMLInputElement | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setSearchTerm(searchElement.current?.value!);
   }
 
-  return (
-    <section className="content-section" id="all-events-section">
-      <header>
-        <h2>Find your next event!</h2>
-        <form onSubmit={handleSubmit} id="search-form">
-          <input
-            type="search"
-            placeholder="Search events"
-            ref={searchElement}
-          />
-          <button>Search</button>
-        </form>
-      </header>
-      <p>Please enter a search term and to find events.</p>
-    </section>
-  );
+  const { data, isPending, isError, error } = useQuery<
+    EventItemType[],
+    FetchError
+  >({
+    queryKey: ["events", { search: searchTerm }],
+    //pass as callback because we need to pass the term
+    queryFn: ({ signal }) => fetchEvents({ signal, searchTerm }),
+  });
+
+  let content = <p>Please enter a search term and to find events.</p>;
+
+  if (isPending) content = <LoadingIndicator />;
+
+  if (isError)
+    content = (
+      <ErrorBlock
+        title="an error occured"
+        message={error.info?.message || "failed to fetche events"}
+      />
+    );
+
+  if (data) {
+    content = (
+      <ul className="events-list">
+        {data.map((event) => {
+          return <li key={event.id}>{<EventItem event={event} />}</li>;
+        })}
+      </ul>
+    );
+    return (
+      <section className="content-section" id="all-events-section">
+        <header>
+          <h2>Find your next event!</h2>
+          <form onSubmit={handleSubmit} id="search-form">
+            <input
+              type="search"
+              placeholder="Search events"
+              ref={searchElement}
+            />
+            <button>Search</button>
+          </form>
+        </header>
+        {content}
+      </section>
+    );
+  }
 }
