@@ -1,4 +1,8 @@
 import { EventItemType, FetchError, FormDataType } from "../types";
+import { QueryClient } from "@tanstack/react-query";
+
+export const queryClient = new QueryClient();
+
 type FetchEventsProps = {
   searchTerm?: string;
   signal?: AbortSignal;
@@ -51,4 +55,27 @@ export async function createNewEvent(eventData: { event: FormDataType }) {
   const { event } = await response.json();
 
   return event;
+}
+
+export async function fetchSelectableImages({
+  signal,
+}: {
+  signal: AbortSignal;
+}) {
+  const response = await fetch(`http://localhost:3000/events/images`, {
+    signal,
+  });
+
+  if (!response.ok) {
+    const error = new Error(
+      "An error occurred while fetching the images"
+    ) as FetchError;
+    error.code = response.status;
+    error.info = await response.json();
+    throw error;
+  }
+
+  const { images } = await response.json();
+
+  return images;
 }

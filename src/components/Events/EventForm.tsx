@@ -1,14 +1,13 @@
 import { FormEvent, ReactNode, useState } from "react";
 
 import ImagePicker from "../ImagePicker.js";
-import { FormDataType } from "../../types.js";
+import { FetchError, FormDataType } from "../../types.js";
+import { useQuery } from "@tanstack/react-query";
+import { fetchSelectableImages } from "../../util/http.js";
+import ErrorBlock from "../UI/ErrorBlock.js";
 type ImageType = { image?: string };
 type EventData = (FormDataType & ImageType) | null;
-/* type EventFormProps = {
-  inputData: EventData;
-  onSubmit: (data: EventData) => void;
-  children: ReactNode;
-}; */
+
 type EventFormProps = {
   inputData?: EventData;
   onSubmit: (data: Exclude<EventData, null>) => void;
@@ -20,6 +19,14 @@ export default function EventForm({
   children,
 }: EventFormProps) {
   const [selectedImage, setSelectedImage] = useState(inputData?.image);
+
+  const { data, isPending, isError, error } = useQuery<
+    { path: string; caption: string }[],
+    FetchError
+  >({
+    queryKey: ["events-images"],
+    queryFn: fetchSelectableImages,
+  });
 
   function handleSelectImage(image: string) {
     setSelectedImage(image);
@@ -52,14 +59,23 @@ export default function EventForm({
           defaultValue={inputData?.title ?? ""}
         />
       </p>
+      {isPending && <p>Loading selectable images</p>}
 
-      <div className="control">
-        <ImagePicker
-          images={[]}
-          onSelect={handleSelectImage}
-          selectedImage={selectedImage}
+      {isError && (
+        <ErrorBlock
+          title="Failed to load images"
+          message={error.info?.message || "Please try again later"}
         />
-      </div>
+      )}
+      {data && (
+        <div className="control">
+          <ImagePicker
+            images={data}
+            onSelect={handleSelectImage}
+            selectedImage={selectedImage}
+          />
+        </div>
+      )}
 
       <p className="control">
         <label htmlFor="description">Description</label>
@@ -102,7 +118,7 @@ export default function EventForm({
         />
       </p>
 
-      <p className="form-actions">{children}</p>
+      <div className="form-actions">{children}</div>
     </form>
   );
 }

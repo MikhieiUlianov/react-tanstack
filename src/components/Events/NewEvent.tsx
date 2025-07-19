@@ -4,7 +4,7 @@ import Modal from "../UI/Modal.js";
 import EventForm from "./EventForm.js";
 import { EventItemType, FetchError, FormDataType } from "../../types.js";
 import { useMutation } from "@tanstack/react-query";
-import { createNewEvent } from "../../util/http.js";
+import { createNewEvent, queryClient } from "../../util/http.js";
 import ErrorBlock from "../UI/ErrorBlock.js";
 import LoadingIndicator from "../UI/LoadingIndicator.js";
 
@@ -17,6 +17,10 @@ export default function NewEvent() {
     { event: FormDataType }
   >({
     mutationFn: createNewEvent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      navigate("/events");
+    },
   });
 
   function handleSubmit(formData: FormDataType) {
