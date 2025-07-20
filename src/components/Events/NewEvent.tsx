@@ -30,7 +30,7 @@ export default function NewEvent() {
   return (
     <Modal onClose={() => navigate("../")}>
       <EventForm onSubmit={handleSubmit}>
-        {isPending && <LoadingIndicator />}
+        {isPending && "Submitting..."}
         {!isPending && (
           <>
             <Link to="../" className="button-text">
@@ -47,7 +47,7 @@ export default function NewEvent() {
           title="Failed to create event"
           message={
             error.info?.message ||
-            "Failed tocreate event, Please check your input and try again later"
+            "Failed to create event. Please check your inputs and try again later."
           }
         />
       )}

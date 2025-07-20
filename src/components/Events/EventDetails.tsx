@@ -6,8 +6,11 @@ import { deleteEvent, fetchEvent, queryClient } from "../../util/http.js";
 import LoadingIndicator from "../UI/LoadingIndicator.js";
 import ErrorBlock from "../UI/ErrorBlock.js";
 import { EventItemType, FetchError } from "../../types.js";
+import { useState } from "react";
+import Modal from "../UI/Modal.js";
 
 export default function EventDetails() {
+  const [isDeleting, setIsDeleting] = useState(false);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -27,10 +30,21 @@ export default function EventDetails() {
   } = useMutation<string, FetchError, { id: string }>({
     mutationFn: () => deleteEvent({ id: id! }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({
+        queryKey: ["events"],
+        //to make events invalidated, but not to trigger rerender immediatelly, but when it is required
+        refetchType: "none",
+      });
       navigate("/events");
     },
   });
+
+  function handleStartDeleting() {
+    setIsDeleting(true);
+  }
+  function handleStopDeleting() {
+    setIsDeleting(false);
+  }
 
   function handleDelete(id: string) {
     mutate({ id });
@@ -46,6 +60,30 @@ export default function EventDetails() {
   }
   return (
     <>
+      {isDeleting && (
+        <Modal onClose={handleStopDeleting}>
+          <h2>Are you sure?</h2>
+          <p>Do you realy want to delete?</p>
+
+          {isPendingMutation && <LoadingIndicator />}
+          {isErrorMutation && (
+            <ErrorBlock
+              title="removing event error occured"
+              message={errorMutation.info?.message || "removing error"}
+            />
+          )}
+          {!isPending && (
+            <p className="form-actions">
+              <button onClick={handleStopDeleting} className="button-text">
+                Cancel
+              </button>
+              <button onClick={() => handleDelete(id!)} className="button">
+                Delete
+              </button>
+            </p>
+          )}
+        </Modal>
+      )}
       <Outlet />
       <Header>
         <Link to="/events" className="nav-item">
@@ -56,17 +94,11 @@ export default function EventDetails() {
         <header>
           <h1>{data?.title}</h1>
           <nav>
-            <button onClick={() => handleDelete(id!)}>Delete</button>
+            <button onClick={handleStartDeleting}>Delete</button>
             <Link to="edit">Edit</Link>
           </nav>
         </header>
-        {(isPending || isPendingMutation) && <LoadingIndicator />}
-        {isErrorMutation && (
-          <ErrorBlock
-            title="removing event error occured"
-            message={errorMutation.info?.message || "removing error"}
-          />
-        )}
+        {isPending && <LoadingIndicator />}
         {isError && (
           <ErrorBlock
             title="fetchind event data error"
