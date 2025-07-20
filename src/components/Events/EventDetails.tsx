@@ -1,8 +1,49 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useNavigate, useParams } from "react-router-dom";
 
 import Header from "../Header.js";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { deleteEvent, fetchEvent, queryClient } from "../../util/http.js";
+import LoadingIndicator from "../UI/LoadingIndicator.js";
+import ErrorBlock from "../UI/ErrorBlock.js";
+import { EventItemType, FetchError } from "../../types.js";
 
 export default function EventDetails() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  const { data, isPending, isError, error } = useQuery<
+    EventItemType,
+    FetchError
+  >({
+    queryKey: ["events", id],
+    queryFn: ({ signal }) => fetchEvent({ id: id!, signal }),
+  });
+
+  const {
+    mutate,
+    isPending: isPendingMutation,
+    isError: isErrorMutation,
+    error: errorMutation,
+  } = useMutation<string, FetchError, { id: string }>({
+    mutationFn: () => deleteEvent({ id: id! }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      navigate("/events");
+    },
+  });
+
+  function handleDelete(id: string) {
+    mutate({ id });
+  }
+  let formattedDate = "";
+
+  if (data?.date) {
+    formattedDate = new Date(data.date).toLocaleDateString("en-US", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  }
   return (
     <>
       <Outlet />
@@ -13,22 +54,42 @@ export default function EventDetails() {
       </Header>
       <article id="event-details">
         <header>
-          <h1>EVENT TITLE</h1>
+          <h1>{data?.title}</h1>
           <nav>
-            <button>Delete</button>
+            <button onClick={() => handleDelete(id!)}>Delete</button>
             <Link to="edit">Edit</Link>
           </nav>
         </header>
-        <div id="event-details-content">
-          <img src="" alt="" />
-          <div id="event-details-info">
-            <div>
-              <p id="event-details-location">EVENT LOCATION</p>
-              <time dateTime={`Todo-DateT$Todo-Time`}>DATE @ TIME</time>
+        {(isPending || isPendingMutation) && <LoadingIndicator />}
+        {isErrorMutation && (
+          <ErrorBlock
+            title="removing event error occured"
+            message={errorMutation.info?.message || "removing error"}
+          />
+        )}
+        {isError && (
+          <ErrorBlock
+            title="fetchind event data error"
+            message={error.info?.message || "fetching data error"}
+          />
+        )}
+        {!isPending && (
+          <div id="event-details-content">
+            <img
+              src={`http://localhost:3000/${data?.image}`}
+              alt={data?.title}
+            />
+            <div id="event-details-info">
+              <div>
+                <p id="event-details-location">{data?.location}</p>
+                <time dateTime={`Todo-DateT$Todo-Time`}>
+                  {formattedDate} @ {data?.time}
+                </time>
+              </div>
+              <p id="event-details-description">{data?.description}</p>
             </div>
-            <p id="event-details-description">EVENT DESCRIPTION</p>
           </div>
-        </div>
+        )}
       </article>
     </>
   );
